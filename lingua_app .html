@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinguaDoc — Estude idiomas com seus documentos</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,800;1,300&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #17171a;
+    --surface2: #1f1f24;
+    --border: #2a2a30;
+    --accent: #c8f557;
+    --accent2: #57c8f5;
+    --accent3: #f5a557;
+    --text: #e8e8ec;
+    --muted: #7a7a85;
+    --danger: #f55757;
+    --radius: 12px;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: rgba(14,14,16,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--text); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .api-key-wrap { display: flex; align-items: center; gap: 8px; }
+  .api-key-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-key-input:focus { border-color: var(--accent); }
+  .api-key-input::placeholder { color: var(--muted); }
+  .api-key-status {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted); flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .api-key-status.ok { background: var(--accent); }
+  .lang-badges { display: flex; gap: 8px; }
+  .badge {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  /* ---- MAIN LAYOUT ---- */
+  .app-container {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    min-height: calc(100vh - 65px);
+  }
+
+  /* ---- LEFT PANEL ---- */
+  .left-panel { border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+
+  /* Upload area */
+  .upload-zone {
+    margin: 32px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    background: var(--surface);
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(200,245,87,0.04);
+  }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+    display: block;
+  }
+  .upload-zone h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .upload-zone p { color: var(--muted); font-size: 13px; }
+  .file-types {
+    display: flex; gap: 8px; justify-content: center; margin-top: 16px;
+  }
+  .file-type-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+  }
+
+  /* Text display */
+  .text-panel {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    padding: 0 32px 32px;
+  }
+  .text-panel.visible { display: flex; }
+
+  .text-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .text-meta .filename {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .text-meta .filename::before { content: '📄'; }
+  .word-count { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+  .text-controls {
+    display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.active { background: var(--accent); color: #0e0e10; border-color: var(--accent); font-weight: 500; }
+  .btn-accent {
+    background: var(--accent);
+    color: #0e0e10;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+  .btn-accent:hover { opacity: 0.85; color: #0e0e10; }
+
+  .doc-text {
+    flex: 1;
+    overflow-y: auto;
+    line-height: 1.9;
+    font-size: 15px;
+    color: var(--text);
+    max-height: calc(100vh - 320px);
+    padding-right: 8px;
+    scroll-behavior: smooth;
+  }
+  .doc-text::-webkit-scrollbar { width: 4px; }
+  .doc-text::-webkit-scrollbar-track { background: transparent; }
+  .doc-text::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .doc-text p { margin-bottom: 12px; }
+
+  .doc-text .word-highlight {
+    background: rgba(200,245,87,0.15);
+    border-bottom: 2px solid var(--accent);
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0 2px;
+    transition: background 0.15s;
+  }
+  .doc-text .word-highlight:hover { background: rgba(200,245,87,0.3); }
+
+  /* selection tooltip */
+  .sel-tooltip {
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 8px;
+    display: none;
+    gap: 6px;
+    z-index: 999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .sel-tooltip.visible { display: flex; }
+  .sel-tooltip button {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .sel-tooltip button:hover { opacity: 0.8; }
+
+  /* ---- RIGHT PANEL ---- */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+  }
+
+  .tools-nav {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tools-nav::-webkit-scrollbar { display: none; }
+  .tool-tab {
+    padding: 14px 18px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tool-tab:hover { color: var(--text); }
+  .tool-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tool-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .tool-panel.active { display: flex; }
+
+  /* AI Chat */
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: calc(100vh - 200px);
+  }
+  .chat-messages::-webkit-scrollbar { width: 3px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .msg {
+    max-width: 90%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg.user {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #0e0e10;
+    border-bottom-right-radius: 4px;
+    font-weight: 500;
+  }
+  .msg.ai {
+    align-self: flex-start;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+  .msg.ai .ai-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--accent2);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .msg.thinking { opacity: 0.6; }
+  .typing-dots span {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--muted);
+    border-radius: 50%;
+    margin: 0 2px;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+  }
+
+  .chat-input-area {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    resize: none;
+    min-height: 42px;
+    max-height: 120px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: var(--muted); }
+  .send-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    width: 42px; height: 42px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .send-btn:hover { opacity: 0.85; }
+
+  /* Quick prompts */
+  .quick-prompts {
+    padding: 0 16px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .qp {
+    padding: 5px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+  }
+  .qp:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* Flashcards */
+  .flashcard-panel { padding: 20px; flex: 1; overflow-y: auto; }
+  .flashcard-controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .flashcard {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    min-height: 160px;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    transition: all 0.35s;
+    transform-style: preserve-3d;
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .flashcard.flipped { background: var(--surface2); border-color: var(--accent); }
+  .flashcard .card-front, .flashcard .card-back { width: 100%; }
+  .flashcard .card-back { display: none; }
+  .flashcard.flipped .card-front { display: none; }
+  .flashcard.flipped .card-back { display: block; }
+
+  .card-word {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .card-hint { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+  .card-translation {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .card-example {
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 8px;
+  }
+  .card-nav { display: flex; gap: 10px; justify-content: center; align-items: center; }
+  .card-counter { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+  .fc-list { display: flex; flex-direction: column; gap: 8px; }
+  .fc-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .fc-item .word { font-weight: 600; min-width: 120px; color: var(--accent2); font-family: var(--font-mono); }
+  .fc-item .arrow { color: var(--muted); }
+  .fc-item .transl { color: var(--text); }
+  .fc-item.generating { opacity: 0.5; font-style: italic; color: var(--muted); }
+
+  /* Quiz */
+  .quiz-panel { padding: 20px; flex: 1; overflow-y: auto; }
+  .quiz-q {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    line-height: 1.4;
+    color: var(--text);
+  }
+  .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+  .quiz-option {
+    padding: 14px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    text-align: left;
+    color: var(--text);
+    font-family: var(--font-body);
+  }
+  .quiz-option:hover:not(:disabled) { border-color: var(--accent2); }
+  .quiz-option.correct { border-color: var(--accent); background: rgba(200,245,87,0.1); color: var(--accent); }
+  .quiz-option.wrong { border-color: var(--danger); background: rgba(245,87,87,0.1); color: var(--danger); }
+  .quiz-option:disabled { cursor: default; }
+  .quiz-score {
+    display: flex; gap: 16px; margin-bottom: 20px; padding: 12px 16px;
+    background: var(--surface2); border-radius: 10px; border: 1px solid var(--border);
+  }
+  .quiz-score-item { text-align: center; }
+  .quiz-score-num { font-family: var(--font-mono); font-size: 20px; font-weight: 500; }
+  .quiz-score-label { font-size: 10px; color: var(--muted); font-family: var(--font-mono); }
+  .quiz-score-item.correct .quiz-score-num { color: var(--accent); }
+  .quiz-score-item.wrong .quiz-score-num { color: var(--danger); }
+  .quiz-feedback {
+    margin-top: 16px; padding: 14px 16px;
+    background: var(--surface2); border-radius: 10px;
+    border-left: 3px solid var(--accent);
+    font-size: 13px; line-height: 1.7;
+    display: none;
+  }
+  .quiz-feedback.visible { display: block; }
+  .quiz-next { margin-top: 16px; width: 100%; }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 32px; text-align: center;
+  }
+  .empty-state-inner { max-width: 220px; }
+  .empty-state-icon { font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.4; }
+  .empty-state h3 { font-family: var(--font-display); font-size: 16px; color: var(--muted); font-weight: 300; }
+
+  /* Loading overlay */
+  .loading-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(14,14,16,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  }
+  .loading-overlay.visible { display: flex; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+  /* Notification */
+  .notif {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 13px;
+    z-index: 2000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+  .notif.show { transform: translateY(0); opacity: 1; }
+
+  /* Scrollbar global */
+  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+  @media (max-width: 768px) {
+    .app-container { grid-template-columns: 1fr; }
+    .right-panel { min-height: 50vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Lingua<span>Doc</span></div>
+  <div class="header-right">
+    <div class="api-key-wrap">
+      <div class="api-key-status" id="apiKeyStatus"></div>
+      <input class="api-key-input" id="apiKeyInput" type="text" placeholder="GPT-4o mini ✓" readonly style="color:var(--accent);cursor:default" />
+    </div>
+    <div class="lang-badges">
+      <div class="badge">🇧🇷 PT</div>
+      <div class="badge">→</div>
+      <div id="targetLangBadge" class="badge">Selecione idioma</div>
+    </div>
+  </div>
+</header>
+
+<div class="app-container">
+  <!-- LEFT: Document -->
+  <div class="left-panel">
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept=".pdf,.txt">
+      <span class="upload-icon">📂</span>
+      <h2>Suba seu documento</h2>
+      <p>Arraste ou clique para selecionar um arquivo no idioma que deseja estudar</p>
+      <div class="file-types">
+        <span class="file-type-tag">PDF</span>
+        <span class="file-type-tag">TXT</span>
+      </div>
+    </div>
+
+    <div class="text-panel" id="textPanel">
+      <div class="text-meta">
+        <div class="filename" id="fileName">documento.pdf</div>
+        <div class="word-count" id="wordCount"></div>
+      </div>
+      <div class="text-controls">
+        <button class="btn" id="btnHighlight" onclick="toggleHighlight()">✨ Destacar palavras difíceis</button>
+        <button class="btn" id="btnFontSize" onclick="cycleFontSize()">Aa</button>
+        <button class="btn" onclick="clearDoc()">↩ Trocar arquivo</button>
+      </div>
+      <div class="doc-text" id="docText"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Tools -->
+  <div class="right-panel">
+    <div class="tools-nav">
+      <div class="tool-tab active" onclick="switchTab('chat')" id="tab-chat">💬 Assistente</div>
+      <div class="tool-tab" onclick="switchTab('flashcards')" id="tab-flashcards">🃏 Flashcards</div>
+      <div class="tool-tab" onclick="switchTab('quiz')" id="tab-quiz">🧠 Quiz</div>
+    </div>
+
+    <!-- CHAT TOOL -->
+    <div class="tool-panel active" id="panel-chat">
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg ai">
+          <span class="ai-label">● LinguaDoc AI</span>
+          Olá! Suba um documento em outro idioma e eu te ajudo a estudar. Posso traduzir trechos, explicar vocabulário, gramática, contexto cultural e muito mais. 🌍
+        </div>
+      </div>
+      <div class="quick-prompts" id="quickPrompts">
+        <div class="qp" onclick="sendQuick('Qual é o tema principal do texto?')">📖 Resumo</div>
+        <div class="qp" onclick="sendQuick('Liste as 10 palavras mais difíceis do texto e explique cada uma')">📚 Vocabulário</div>
+        <div class="qp" onclick="sendQuick('Quais estruturas gramaticais interessantes aparecem no texto?')">📐 Gramática</div>
+        <div class="qp" onclick="sendQuick('Explique o contexto cultural do texto')">🌍 Cultura</div>
+      </div>
+      <div class="chat-input-area">
+        <textarea class="chat-input" id="chatInput" placeholder="Pergunte sobre o texto..." rows="1" onkeydown="handleKey(event)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+
+    <!-- FLASHCARDS TOOL -->
+    <div class="tool-panel" id="panel-flashcards">
+      <div class="flashcard-panel">
+        <div class="flashcard-controls">
+          <button class="btn btn-accent" onclick="generateFlashcards()" id="btnGenFC">⚡ Gerar Flashcards</button>
+          <button class="btn" onclick="switchFCView('cards')" id="fcViewCards">🃏 Cards</button>
+          <button class="btn" onclick="switchFCView('list')" id="fcViewList">📋 Lista</button>
+        </div>
+
+        <div id="fcCards">
+          <div class="empty-state">
+            <div class="empty-state-inner">
+              <span class="empty-state-icon">🃏</span>
+              <h3>Gere flashcards a partir do seu documento</h3>
+            </div>
+          </div>
+        </div>
+
+        <div id="fcList" style="display:none">
+          <div class="fc-list" id="fcListContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUIZ TOOL -->
+    <div class="tool-panel" id="panel-quiz">
+      <div class="quiz-panel">
+        <div class="quiz-score">
+          <div class="quiz-score-item correct">
+            <div class="quiz-score-num" id="scoreCorrect">0</div>
+            <div class="quiz-score-label">Certas</div>
+          </div>
+          <div class="quiz-score-item wrong">
+            <div class="quiz-score-num" id="scoreWrong">0</div>
+            <div class="quiz-score-label">Erradas</div>
+          </div>
+          <div class="quiz-score-item">
+            <div class="quiz-score-num" id="scoreTotal">0</div>
+            <div class="quiz-score-label">Total</div>
+          </div>
+        </div>
+        <button class="btn btn-accent" onclick="generateQuiz()" id="btnGenQuiz" style="margin-bottom:20px;width:100%">🧠 Gerar Nova Questão</button>
+        <div id="quizContent">
+          <div class="empty-state">
+            <div class="empty-state-inner">
+              <span class="empty-state-icon">🧠</span>
+              <h3>Gere questões a partir do seu documento</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Selection tooltip -->
+<div class="sel-tooltip" id="selTooltip">
+  <button style="background:var(--accent);color:#0e0e10" onclick="translateSelection()">🌐 Traduzir</button>
+  <button style="background:var(--surface2);color:var(--text);border:1px solid var(--border)" onclick="explainSelection()">💡 Explicar</button>
+  <button style="background:var(--surface2);color:var(--text);border:1px solid var(--border)" onclick="addToFlashcards()">🃏 Flashcard</button>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Processando...</div>
+</div>
+
+<!-- Notification -->
+<div class="notif" id="notif"></div>
+
+<script>
+// ---- STATE ----
+let docText = '';
+let docFileName = '';
+let flashcards = [];
+let currentCard = 0;
+let highlightOn = false;
+let fontSize = 15;
+let quizScores = { correct: 0, wrong: 0, total: 0 };
+let selectedText = '';
+let fcView = 'cards';
+
+// ---- FILE HANDLING ----
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
+
+async function processFile(file) {
+  docFileName = file.name;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  showLoading('Lendo documento...');
+
+  try {
+    if (ext === 'txt') {
+      docText = await file.text();
+    } else if (ext === 'pdf') {
+      docText = await extractPdfText(file);
+    } else {
+      hideLoading();
+      showNotif('Formato não suportado. Use PDF ou TXT.');
+      return;
+    }
+
+    docText = docText.trim();
+    if (!docText || docText.length < 50) {
+      hideLoading();
+      showNotif('Não foi possível extrair texto do arquivo.');
+      return;
+    }
+
+    displayDoc();
+    detectLanguage();
+    hideLoading();
+  } catch (err) {
+    hideLoading();
+    showNotif('Erro ao ler o arquivo: ' + err.message);
+  }
+}
+
+async function extractPdfText(file) {
+  // Load pdf.js from CDN
+  if (!window.pdfjsLib) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  const maxPages = Math.min(pdf.numPages, 30); // limit to 30 pages
+  for (let i = 1; i <= maxPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    text += pageText + '\n\n';
+  }
+  return text;
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = res;
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+function displayDoc() {
+  document.getElementById('uploadZone').style.display = 'none';
+  const panel = document.getElementById('textPanel');
+  panel.classList.add('visible');
+  document.getElementById('fileName').textContent = docFileName;
+  const words = docText.split(/\s+/).length;
+  document.getElementById('wordCount').textContent = `${words.toLocaleString()} palavras`;
+  renderDocText();
+}
+
+function renderDocText() {
+  const container = document.getElementById('docText');
+  const paragraphs = docText.split(/\n\n+/);
+  container.innerHTML = paragraphs.map(p => `<p>${escapeHtml(p.trim())}</p>`).join('');
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function clearDoc() {
+  docText = '';
+  docFileName = '';
+  flashcards = [];
+  document.getElementById('uploadZone').style.display = '';
+  document.getElementById('textPanel').classList.remove('visible');
+  document.getElementById('fcCards').innerHTML = `<div class="empty-state"><div class="empty-state-inner"><span class="empty-state-icon">🃏</span><h3>Gere flashcards a partir do seu documento</h3></div></div>`;
+  document.getElementById('fcListContent').innerHTML = '';
+  document.getElementById('quizContent').innerHTML = `<div class="empty-state"><div class="empty-state-inner"><span class="empty-state-icon">🧠</span><h3>Gere questões a partir do seu documento</h3></div></div>`;
+  fileInput.value = '';
+  highlightOn = false;
+  document.getElementById('btnHighlight').classList.remove('active');
+  document.getElementById('targetLangBadge').textContent = 'Selecione idioma';
+}
+
+// ---- LANGUAGE DETECTION ----
+async function detectLanguage() {
+  if (!docText) return;
+  try {
+    const sample = docText.slice(0, 500);
+    const response = await callClaude(`Identifique o idioma deste texto em uma única palavra (ex: "Inglês", "Espanhol", "Francês", "Alemão", etc). Texto: "${sample}"`);
+    document.getElementById('targetLangBadge').textContent = response.trim();
+  } catch (e) {}
+}
+
+// ---- TEXT CONTROLS ----
+function toggleHighlight() {
+  highlightOn = !highlightOn;
+  document.getElementById('btnHighlight').classList.toggle('active', highlightOn);
+  if (highlightOn) {
+    highlightDifficultWords();
+  } else {
+    renderDocText();
+  }
+}
+
+async function highlightDifficultWords() {
+  showLoading('Identificando vocabulário difícil...');
+  try {
+    const sample = docText.slice(0, 2000);
+    const words = await callClaude(`Do seguinte texto, liste APENAS as 20 palavras mais difíceis ou incomuns (não palavras básicas). Retorne SOMENTE as palavras separadas por vírgula, sem numeração ou explicação. Texto: "${sample}"`);
+    const wordList = words.split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
+    
+    const container = document.getElementById('docText');
+    const paragraphs = docText.split(/\n\n+/);
+    container.innerHTML = paragraphs.map(p => {
+      let escaped = escapeHtml(p.trim());
+      wordList.forEach(word => {
+        const re = new RegExp(`\\b(${word}s?)\\b`, 'gi');
+        escaped = escaped.replace(re, `<span class="word-highlight" onclick="explainWord('$1')">$1</span>`);
+      });
+      return `<p>${escaped}</p>`;
+    }).join('');
+    hideLoading();
+  } catch (e) {
+    hideLoading();
+    showNotif('Erro ao destacar palavras.');
+  }
+}
+
+function explainWord(word) {
+  switchTab('chat');
+  const msg = `Explique a palavra "${word}" no contexto do texto: seu significado, uso, e como pronunciá-la.`;
+  document.getElementById('chatInput').value = msg;
+  sendMessage();
+}
+
+function cycleFontSize() {
+  const sizes = [13, 15, 17, 20];
+  const idx = sizes.indexOf(fontSize);
+  fontSize = sizes[(idx + 1) % sizes.length];
+  document.getElementById('docText').style.fontSize = fontSize + 'px';
+}
+
+// ---- SELECTION TOOLTIP ----
+document.getElementById('docText').addEventListener('mouseup', handleSelection);
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('#selTooltip') && !e.target.closest('#docText')) {
+    hideTooltip();
+  }
+});
+
+function handleSelection(e) {
+  const sel = window.getSelection();
+  selectedText = sel ? sel.toString().trim() : '';
+  if (selectedText.length > 1) {
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const tooltip = document.getElementById('selTooltip');
+    tooltip.style.left = Math.max(0, rect.left + rect.width/2 - 80) + 'px';
+    tooltip.style.top = (rect.top + window.scrollY - 54) + 'px';
+    tooltip.classList.add('visible');
+  } else {
+    hideTooltip();
+  }
+}
+
+function hideTooltip() {
+  document.getElementById('selTooltip').classList.remove('visible');
+}
+
+function translateSelection() {
+  hideTooltip();
+  switchTab('chat');
+  sendWith(`Traduza para português: "${selectedText}"`);
+}
+
+function explainSelection() {
+  hideTooltip();
+  switchTab('chat');
+  sendWith(`Explique em português: "${selectedText}" — significado, gramática e contexto de uso.`);
+}
+
+function addToFlashcards() {
+  hideTooltip();
+  if (!selectedText) return;
+  generateSingleFlashcard(selectedText);
+}
+
+// ---- AI CHAT ----
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  await sendWith(text);
+}
+
+async function sendWith(text) {
+  const container = document.getElementById('chatMessages');
+  
+  // User message
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg user';
+  userMsg.textContent = text;
+  container.appendChild(userMsg);
+
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'msg ai thinking';
+  typing.innerHTML = '<span class="ai-label">● LinguaDoc AI</span><div class="typing-dots"><span></span><span></span><span></span></div>';
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const context = docText ? `DOCUMENTO DO USUÁRIO:\n${docText.slice(0, 6000)}\n\n---\n` : '';
+    const systemPrompt = `Você é LinguaDoc, um assistente especialista em ensino de idiomas. ${context ? 'O usuário está estudando o documento acima. Responda em português do Brasil, mas cite exemplos no idioma do documento quando relevante.' : 'Responda em português do Brasil.'}`;
+    
+    const response = await callClaudeWithSystem(systemPrompt, text);
+    
+    typing.remove();
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'msg ai';
+    aiMsg.innerHTML = `<span class="ai-label">● LinguaDoc AI</span>${formatAIResponse(response)}`;
+    container.appendChild(aiMsg);
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    typing.remove();
+    const errMsg = document.createElement('div');
+    errMsg.className = 'msg ai';
+    errMsg.innerHTML = `<span class="ai-label">● LinguaDoc AI</span>Erro ao conectar com a IA. Verifique sua conexão.`;
+    container.appendChild(errMsg);
+  }
+}
+
+function formatAIResponse(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, `<code style="background:var(--surface);padding:1px 6px;border-radius:4px;font-family:var(--font-mono);font-size:12px">$1</code>`)
+    .replace(/\n/g, '<br>');
+}
+
+function sendQuick(msg) {
+  if (!docText) { showNotif('Suba um documento primeiro!'); return; }
+  document.getElementById('chatInput').value = msg;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+document.getElementById('chatInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// ---- FLASHCARDS ----
+async function generateFlashcards() {
+  if (!docText) { showNotif('Suba um documento primeiro!'); return; }
+  showLoading('Gerando flashcards com IA...');
+
+  try {
+    const sample = docText.slice(0, 4000);
+    const raw = await callClaude(`A partir deste texto, gere exatamente 10 flashcards de vocabulário. Para cada palavra/expressão retorne um JSON array com esta estrutura exata:
+[{"word": "palavra no idioma original", "translation": "tradução em português", "example": "exemplo de frase curta do texto ou similar", "level": "fácil|médio|difícil"}]
+Responda APENAS com o JSON, sem markdown, sem explicações.
+Texto: ${sample}`);
+
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    flashcards = JSON.parse(cleaned);
+    currentCard = 0;
+    renderFlashcards();
+    renderFlashcardList();
+    hideLoading();
+  } catch (e) {
+    hideLoading();
+    showNotif('Erro ao gerar flashcards: ' + e.message);
+  }
+}
+
+async function generateSingleFlashcard(word) {
+  switchTab('flashcards');
+  showLoading('Criando flashcard...');
+  try {
+    const raw = await callClaude(`Crie 1 flashcard para a palavra/expressão "${word}". Retorne APENAS um JSON com esta estrutura: {"word": "${word}", "translation": "tradução em português", "example": "exemplo de frase", "level": "fácil|médio|difícil"}`);
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const card = JSON.parse(cleaned);
+    flashcards.unshift(card);
+    currentCard = 0;
+    renderFlashcards();
+    renderFlashcardList();
+    hideLoading();
+    showNotif('Flashcard adicionado! 🃏');
+  } catch (e) {
+    hideLoading();
+    showNotif('Erro ao criar flashcard.');
+  }
+}
+
+function renderFlashcards() {
+  if (!flashcards.length) return;
+  const card = flashcards[currentCard];
+  const levelColor = { 'fácil': 'var(--accent)', 'médio': 'var(--accent3)', 'difícil': 'var(--danger)' };
+
+  document.getElementById('fcCards').innerHTML = `
+    <div class="flashcard" id="currentCard" onclick="flipCard()">
+      <div class="card-front">
+        <div style="font-size:10px;font-family:var(--font-mono);color:${levelColor[card.level] || 'var(--muted)'};margin-bottom:12px;text-transform:uppercase">${card.level || 'médio'}</div>
+        <div class="card-word">${card.word}</div>
+        <div class="card-hint">Clique para ver a tradução</div>
+      </div>
+      <div class="card-back">
+        <div class="card-translation">${card.translation}</div>
+        <div class="card-example">"${card.example}"</div>
+      </div>
+    </div>
+    <div class="card-nav">
+      <button class="btn" onclick="prevCard(event)">← Anterior</button>
+      <div class="card-counter">${currentCard + 1} / ${flashcards.length}</div>
+      <button class="btn" onclick="nextCard(event)">Próximo →</button>
+    </div>
+  `;
+}
+
+function flipCard() {
+  document.getElementById('currentCard')?.classList.toggle('flipped');
+}
+
+function prevCard(e) { e.stopPropagation(); currentCard = (currentCard - 1 + flashcards.length) % flashcards.length; renderFlashcards(); }
+function nextCard(e) { e.stopPropagation(); currentCard = (currentCard + 1) % flashcards.length; renderFlashcards(); }
+
+function renderFlashcardList() {
+  const list = document.getElementById('fcListContent');
+  list.innerHTML = flashcards.map(c => `
+    <div class="fc-item">
+      <span class="word">${c.word}</span>
+      <span class="arrow">→</span>
+      <span class="transl">${c.translation}</span>
+    </div>
+  `).join('');
+}
+
+function switchFCView(view) {
+  fcView = view;
+  document.getElementById('fcCards').style.display = view === 'cards' ? '' : 'none';
+  document.getElementById('fcList').style.display = view === 'list' ? '' : 'none';
+  document.getElementById('fcViewCards').classList.toggle('active', view === 'cards');
+  document.getElementById('fcViewList').classList.toggle('active', view === 'list');
+}
+
+// ---- QUIZ ----
+async function generateQuiz() {
+  if (!docText) { showNotif('Suba um documento primeiro!'); return; }
+  showLoading('Gerando questão com IA...');
+
+  try {
+    const sample = docText.slice(0, 5000);
+    const raw = await callClaude(`Com base neste texto, crie UMA questão de múltipla escolha para testar compreensão ou vocabulário do idioma. Retorne APENAS um JSON com esta estrutura exata (sem markdown):
+{"question": "pergunta em português", "options": ["opção A", "opção B", "opção C", "opção D"], "correct": 0, "explanation": "explicação breve da resposta correta"}
+O índice "correct" (0-3) indica qual opção é a correta.
+Texto: ${sample}`);
+
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const quiz = JSON.parse(cleaned);
+    renderQuiz(quiz);
+    hideLoading();
+  } catch (e) {
+    hideLoading();
+    showNotif('Erro ao gerar questão: ' + e.message);
+  }
+}
+
+function renderQuiz(quiz) {
+  const container = document.getElementById('quizContent');
+  container.innerHTML = `
+    <div class="quiz-q">${quiz.question}</div>
+    <div class="quiz-options">
+      ${quiz.options.map((opt, i) => `
+        <button class="quiz-option" onclick="answerQuiz(${i}, ${quiz.correct}, this)" data-idx="${i}">
+          <strong style="font-family:var(--font-mono);margin-right:10px">${['A','B','C','D'][i]}.</strong>${opt}
+        </button>
+      `).join('')}
+    </div>
+    <div class="quiz-feedback" id="quizFeedback">
+      <strong>💡 Explicação:</strong> ${quiz.explanation}
+    </div>
+    <button class="btn btn-accent quiz-next" onclick="generateQuiz()" style="display:none" id="quizNextBtn">→ Próxima questão</button>
+  `;
+}
+
+function answerQuiz(chosen, correct, btn) {
+  const options = document.querySelectorAll('.quiz-option');
+  options.forEach(o => o.disabled = true);
+  
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    quizScores.correct++;
+    showNotif('Correto! ✅');
+  } else {
+    btn.classList.add('wrong');
+    options[correct].classList.add('correct');
+    quizScores.wrong++;
+    showNotif('Errado! A resposta era ' + ['A','B','C','D'][correct] + '. ❌');
+  }
+  quizScores.total++;
+  
+  document.getElementById('scoreCorrect').textContent = quizScores.correct;
+  document.getElementById('scoreWrong').textContent = quizScores.wrong;
+  document.getElementById('scoreTotal').textContent = quizScores.total;
+  document.getElementById('quizFeedback').classList.add('visible');
+  document.getElementById('quizNextBtn').style.display = '';
+}
+
+// ---- TAB SWITCHING ----
+function switchTab(name) {
+  document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ---- API (via backend local) ----
+async function callAI(userMessage) {
+  return callAIWithSystem('Você é um assistente especialista em idiomas. Responda de forma objetiva.', userMessage);
+}
+
+// alias para compatibilidade com o restante do código
+const callClaude = callAI;
+
+async function callClaudeWithSystem(system, userMessage) {
+  return callAIWithSystem(system, userMessage);
+}
+
+async function callAIWithSystem(system, userMessage) {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system, message: userMessage })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro no servidor local. Verifique se o backend está rodando.');
+  }
+
+  const data = await response.json();
+  return data.text;
+}
+
+// ---- UTILS ----
+function showLoading(text = 'Processando...') {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingOverlay').classList.add('visible');
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.remove('visible');
+}
+
+function showNotif(msg) {
+  const n = document.getElementById('notif');
+  n.textContent = msg;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

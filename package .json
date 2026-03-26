@@ -1,0 +1,9 @@
+{
+  "name": "linguadoc",
+  "version": "1.0.0",
+  "description": "App de estudo de idiomas com IA",
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
